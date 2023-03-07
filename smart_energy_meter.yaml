@@ -24,7 +24,7 @@ web_server:
   port: 80
 
 wifi:
-  domain: '.lan'
+#  domain: '.lan'
   ssid: MyIoT
   password: wifi1001foriot
 
