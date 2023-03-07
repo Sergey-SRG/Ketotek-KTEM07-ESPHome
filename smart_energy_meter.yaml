@@ -1,0 +1,210 @@
+substitutions:
+  hostname: "smart-energy-meter"
+  friendly_name: "Smart Energy Meter"
+
+esphome:
+  name: smart-energy-meter
+  friendly_name: $friendly_name
+
+libretuya:
+  board: generic-bk7231n-qfn32-tuya
+  framework:
+    version: dev
+
+logger:
+  level: INFO
+  baud_rate: 0
+
+api:
+  reboot_timeout: 10s
+
+ota:
+
+web_server:
+  port: 80
+
+wifi:
+  domain: '.lan'
+  ssid: MyIoT
+  password: wifi1001foriot
+
+captive_portal: 
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: 'Europe/Minsk'
+    update_interval: 60min
+
+uart:
+  rx_pin: P10 
+  tx_pin: P11
+  baud_rate: 9600
+
+tuya:
+  on_datapoint_update:
+    - sensor_datapoint: 6
+      datapoint_type: raw
+      then:
+        - lambda: |-
+            id(voltage).publish_state((x[0] << 8 | x[1]) * 0.1);
+            id(current).publish_state((x[3] << 8 | x[4]) * 0.001);
+            id(power).publish_state((x[6] << 8 | x[7]));
+    - sensor_datapoint: 9
+      datapoint_type: int
+      then:
+        - lambda: |-
+            std::string sflag = " ";
+            switch(x) {
+              case 0:
+                sflag = "all_system_good";
+                break;
+              case 1:
+                sflag = "short_circuit_alarm";
+                break;
+              case 2:
+                sflag = "surge_alarm";
+                break;
+              case 4:
+                sflag = "overload_alarm";
+                break;
+              case 8:
+                sflag = "leakagecurr_alarm";
+                break;
+              case 16:
+                sflag = "temp_dif_fault";
+                break;
+              case 32:
+                sflag = "fire_alarm";
+                break;
+              case 64:
+                sflag = "high_power_alarm";
+                break;
+              case 128:
+                sflag = "self_test_alarm";
+                break;
+              case 256:
+                sflag = "overcurrent_alarm";
+                break;
+              case 512:
+                sflag = "unbalance_alarm";
+                break;
+              case 1024:
+                sflag = "overvoltage_alarm";
+                break;
+              case 2048:
+                sflag = "undervoltage_alarm";
+                break;
+              case 4096:
+                sflag = "miss_phase_alarm";
+                break;
+              case 8192:
+                sflag = "outage_alarm";
+                break;
+              case 16384:
+                sflag = "magnetism_alarm";
+                break;
+              case 32768:
+                sflag = "credit_alarm";
+                break;
+              case 65536:
+                sflag = "no_balance_alarm";
+                break;   
+            }
+            id(fault).publish_state(sflag.c_str());
+sensor:
+  - platform: template
+    name: "Voltage"
+    id: voltage
+    unit_of_measurement: "V"
+    accuracy_decimals: 0
+    icon: "mdi:flash"
+  - platform: template
+    name: "Current"
+    id: current
+    accuracy_decimals: 1
+    unit_of_measurement: "A"
+    icon: "mdi:flash"
+  - platform: template
+    name: "Power"
+    id: power
+    accuracy_decimals: 0
+    unit_of_measurement: "W"
+    icon: "mdi:flash"
+  - platform: "tuya"
+    name: "Energy total"
+    sensor_datapoint: 1
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 1
+    icon: "mdi:flash"
+    filters:
+      - multiply: 0.01
+  - platform: "tuya"
+    name: "Balance energy"
+    sensor_datapoint: 13
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 2
+    icon: "mdi:flash"
+    filters:
+      - multiply: 0.01
+
+number:
+  - platform: "tuya"
+    name: "Charge energy "
+    number_datapoint: 14
+    min_value: 0
+    max_value: 100
+    step: 1
+  - platform: "tuya"
+    name: "Overvoltage"
+    number_datapoint: 101
+    min_value: 250
+    max_value: 300
+    step: 1
+    unit_of_measurement: "V"
+  - platform: "tuya"
+    name: "Undervoltage"
+    number_datapoint: 102
+    min_value: 150
+    max_value: 190
+    step: 1
+    unit_of_measurement: "V"
+  - platform: "tuya"
+    name: "Overcurrent"
+    number_datapoint: 103
+    min_value: 1
+    max_value: 63
+    step: 1
+    unit_of_measurement: "A"
+  - platform: "tuya"
+    name: "Leakage current"
+    number_datapoint: 104
+    min_value: 10
+    max_value: 100
+    step: 1
+    unit_of_measurement: "mA"
+
+text_sensor:
+  - platform: "tuya"
+    name: "Breaker id"
+    sensor_datapoint: 19
+  - platform: template
+    name: "Fault"
+    id: fault
+
+switch:
+  - platform: "tuya"
+    name: "Switch"
+    switch_datapoint: 16
+  - platform: "tuya"
+    name: "Switch prepayment"
+    switch_datapoint: 11
+  - platform: "tuya"
+    name: "Clear energy"
+    switch_datapoint: 12
+  - platform: "tuya"
+    name: "Mute"
+    switch_datapoint: 105
+  - platform: "tuya"
+    name: "Leakage is tripped"
+    switch_datapoint: 106
