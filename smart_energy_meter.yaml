@@ -50,6 +50,7 @@ tuya:
             id(voltage).publish_state((x[0] << 8 | x[1]) * 0.1);
             id(current).publish_state((x[3] << 8 | x[4]) * 0.001);
             id(power).publish_state((x[6] << 8 | x[7]));
+            id(leakage).publish_state(x[9]);
     - sensor_datapoint: 9
       datapoint_type: int
       then:
@@ -130,6 +131,12 @@ sensor:
     id: power
     accuracy_decimals: 0
     unit_of_measurement: "W"
+    icon: "mdi:flash"
+  - platform: template
+    name: "Leakage current"
+    id: leakage
+    accuracy_decimals: 0
+    unit_of_measurement: "mA"
     icon: "mdi:flash"
   - platform: "tuya"
     name: "Energy total"
